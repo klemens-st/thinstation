@@ -3,7 +3,12 @@
 x_check_status()
 {
 	if is_enabled $SHOW_ERROR_REPORT; then
-		if [ $STATUS != 0 ] \
+		if [ $STATUS == 134 ] ; then
+			Xdialog --title $PACKAGE \
+				--clear \
+				--msgbox "Nieprawidłowy użytkownik lub hasło" 10 80
+			touch /tmp/freerdp_login_fail
+		elif [ $STATUS != 0 ] \
 		&& [ $STATUS != ${USER_DISCONNECT_CODE:=0} ] \
 		&& [ $STATUS != ${USER_LOGOUT_CODE:=0} ] \
 		&& [ ! -e /etc/console/$PACKAGE ]; then
@@ -73,7 +78,12 @@ check_reconnect()
 				--yesno "Click yes to reconnect." 10 70
 			reconnect=$?
 		else
-			reconnect=1
+			if [ -e /tmp/freerdp_login_fail ]; then
+				rm /tmp/freerdp_login_fail
+				reconnect=0
+			else
+				reconnect=1
+			fi
 		fi
 	fi
 }
@@ -195,11 +205,11 @@ create_dialog()
 	MAIN_DIALOG='
 <window title="'"$DIALOG_TITLE"'" decorated="true" width-request="325" height-request="213" allow-grow="false" allow-shrink="false" skip_taskbar_hint="true" image-name="'$(choose_pixmap)'">
 	<vbox>
-	<notebook labels="User|Server">
+	<notebook labels="Użytkownik|Serwer">
 		<vbox visible="'"$SHOW_USER"'">
 			<vseparator height-request="1"></vseparator>
 			<text visible="'"$GET_USER"'" space-expand="false" space-fill="false" use-markup="true" xalign="0">
-				<label>Username</label>
+				<label>Nazwa użytkownika</label>
 			</text>
 			<entry visible="'"$GET_USER"'" activates_default="true" has-focus="'$USER_FOCUS'">
 				'$(set_default $DIALOG_USER)'
@@ -208,7 +218,7 @@ create_dialog()
 				<action signal="focus-out-event">refresh:DIALOG_USER</action>
 			</entry>
 			<text visible="'"$GET_PASSWORD"'" space-expand="false" space-fill="false" use-markup="true" xalign="0">
-				<label>Password</label>
+				<label>Hasło</label>
 			</text>
 			<entry visible="'"$GET_PASSWORD"'" visibility="false" caps-lock-warning="true" has-focus="'$PASS_FOCUS'" activates_default="true">
 				<variable>DIALOG_PASSWORD</variable>
@@ -319,6 +329,8 @@ parse_results()
 		if $WINDOWED_SELECTABLE && $windowed; then
 			MODE=WINDOW
 		fi
+	elif [ "$EXIT" == "abort" ]; then
+		shutdown now
 	elif is_enabled $ALLOW_EXIT ; then
 		exit
 	fi
