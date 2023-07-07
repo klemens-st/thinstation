@@ -1,0 +1,8 @@
+firmware regulatory.db
+firmware rt73.bin
+firmware regulatory.db.p7s
+firmware radeon/PALM_me.bin
+firmware radeon/SUMO_rlc.bin
+firmware radeon/SUMO_uvd.bin
+firmware radeon/PALM_pfp.bin
+firmware rtl_nic/rtl8168e-3.fw
